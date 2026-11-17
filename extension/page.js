@@ -35,7 +35,7 @@
         .break{overflow-wrap:anywhere}
       </style>
       <div class="card">
-        <header><strong>ETQ · Erros de Etiquetagem</strong><small>v0.1.0</small><button id="close" aria-label="Ocultar painel">×</button></header>
+        <header><strong>ETQ · Erros de Etiquetagem</strong><small>v0.1.1</small><button id="close" aria-label="Ocultar painel">×</button></header>
         <main>
           <p>Cole os BRs com erro. Cada BR único contará <b>uma vez</b> para o OPS do <b>último LMHub_Recebido</b>.</p>
           <textarea id="input" placeholder="BR123456789012A&#10;BR123456789012B&#10;..." spellcheck="false"></textarea>

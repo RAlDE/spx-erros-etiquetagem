@@ -17,8 +17,8 @@ chrome.action.onClicked.addListener(async tab => {
     });
     const open = !!response?.[0]?.result?.opened;
     await chrome.action.setBadgeBackgroundColor({tabId: tab.id, color: '#ea580c'});
-    await chrome.action.setBadgeText({tabId: tab.id, text: open ? 'ON' : ''});
-    await chrome.action.setTitle({tabId: tab.id, title: open ? 'ETQ aberto — clique para ocultar' : 'ETQ — Abrir ranking'});
+    await chrome.action.setBadgeText({tabId: tab.id, text: ''});
+    await chrome.action.setTitle({tabId: tab.id, title: 'ETQ — Abrir ou ocultar o ranking'});
   } catch (error) {
     await chrome.action.setBadgeBackgroundColor({tabId: tab.id, color: '#991b1b'});
     await chrome.action.setBadgeText({tabId: tab.id, text: '!'});

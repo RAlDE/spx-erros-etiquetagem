@@ -1,0 +1,11 @@
+{
+  "manifest_version": 3,
+  "name": "SPX — Erros de Etiquetagem",
+  "short_name": "ETQ SPX",
+  "version": "0.1.0",
+  "description": "Ranking de operadores pelo último LMHub_Recebido dos BRs colados. Consulta somente leitura.",
+  "permissions": ["activeTab", "scripting"],
+  "host_permissions": ["https://spx.shopee.com.br/*"],
+  "background": {"service_worker": "background.js"},
+  "action": {"default_title": "ETQ — Abrir ranking de erros de etiquetagem"}
+}

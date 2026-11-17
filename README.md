@@ -1,6 +1,6 @@
 # SPX — Erros de Etiquetagem (ETQ)
 
-Extensão independente Chrome/Edge (Manifest V3) para classificar **operadores por quantidade de BRs com erro de etiquetagem**. **Versão inicial 0.1.0 para teste**, sem validação em sessão SPX real.
+Extensão independente Chrome/Edge (Manifest V3) para classificar **operadores por quantidade de BRs com erro de etiquetagem**. **Versão 0.1.1 para teste**, com ícone ETQ apenas em letras; sem validação em sessão SPX real.
 
 ## Regra do ranking
 
@@ -47,3 +47,9 @@ Ao atualizar os arquivos localmente, clique em **Recarregar** na extensão e atu
 ## Regra de manutenção
 
 Projeto separado de `spx-dv`, `spx-onhold`, `spx-delete-orders`, `spx-confirm` e `spx-sku`. Não modificar esses projetos. Corrigir apenas o comportamento solicitado, preservar versões validadas, obter os SHAs atuais antes de qualquer edição e documentar alterações. Nunca inserir BRs reais, nomes pessoais, sessões, respostas brutas ou vídeos no GitHub.
+## Atualização 0.1.1 — ícone
+
+- Ícone laranja com as letras **ETQ**, sem outros elementos gráficos.
+- `manifest.json` atualizado para carregar o ícone também na barra de ferramentas do navegador.
+- Nenhuma alteração da lógica de consulta ou classificação por OPS nesta versão.
+- Pendência real: investigação de execução com 33 BRs consultados e 0 OPS atribuídos. Precisa do diagnóstico do rastreamento para identificar o formato efetivo da resposta SPX, sem inferir responsáveis.

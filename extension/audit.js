@@ -65,11 +65,13 @@
   async function discoverVts(day, request, progress = () => {}, cancelled = () => false, stationId = '') {
     if (!/^\d{4}-\d{2}-\d{2}$/.test(day)) throw new Error('Data da conferência inválida.');
     const paths=['/api/in-station/lmhub/audit/task/list','/api/in-station/lmhub/audit/validation_task/list'];
-    let lastError = null, incomplete = false;
+    let lastError=null, incomplete=false;
+    const attempts=[];
+    let best=null;
     for (const path of paths) {
       for (const key of ['pageno','page_no']) {
-        const records = [];
-        const seenPages = new Set();
+        const records=[], seenPages=new Set();
+        let error='';
         try {
           for (let page=1;page<=limit.taskPages;page++) {
             if (cancelled()) return {vts:[],cancelled:true};
@@ -78,19 +80,30 @@
             const list=rowsOf(body);
             if (!list.length) break;
             const signature=list.map(item=>text(item.task_number ?? item.validation_task_id ?? item.task_id ?? item.id)).join('|');
-            if (seenPages.has(signature)) throw new Error('Paginação VT repetiu a página; tentando outro parâmetro.');
+            if (seenPages.has(signature)) throw new Error('Paginação VT repetiu a página.');
             seenPages.add(signature);
             records.push(...list);
             const total=totalOf(body,0);
             if (total ? records.length>=total : list.length<50) break;
             if (page===limit.taskPages) incomplete=true;
           }
-          if (records.length) return {vts:assignShifts(records,day,stationId),
-            incomplete,scannedTasks:records.length};
-        } catch (error) {lastError=error;}
+          const found=assignShifts(records,day,stationId);
+          const sampleDays=[...new Set(records.slice(0,100).map(r=>parseTask(r)?.day).filter(Boolean))].slice(0,8);
+          attempts.push({source:path,pageParam:key,rows:records.length,matchedVts:found.length,
+            fieldKeys:records[0] ? Object.keys(records[0]).slice(0,24) : [],sampleDays});
+          if(!best || found.length>best.vts.length) best={vts:found,scannedTasks:records.length};
+          // A primeira busca que encontrou VTs para a DATA informada é suficiente.
+          if(found.length) return {...best,incomplete,diagnostics:{attempts}};
+        } catch(e) {
+          lastError=e;
+          error=String(e.message || e);
+          attempts.push({source:path,pageParam:key,rows:records.length,error});
+        }
       }
     }
-    return {vts:[],incomplete,scannedTasks:0,error:lastError?.message || 'Nenhuma VT encontrada.'};
+    return {vts:best?.vts||[],incomplete,scannedTasks:best?.scannedTasks||0,
+      error:lastError?.message || (!best?.scannedTasks ? 'Nenhuma VT encontrada.' : ''),
+      diagnostics:{attempts}};
   }
 
   async function paged(path, params, request, maxPages, cancelled) {

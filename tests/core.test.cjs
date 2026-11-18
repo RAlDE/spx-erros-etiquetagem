@@ -34,11 +34,11 @@ test('sem status textual ainda fornece diagnóstico numérico',()=>{
 });
 test('OPS em colchetes com e sem prefixo Ops',()=>{
   assert.equal(C.parseOperator({operator:'[Ops131849] GISELI'}).ops,'Ops131849');
-  assert.equal(C.parseOperator({operator:'[33371] IVONE'}).ops,'Ops33371');
+  assert.equal(C.parseOperator({operator:'[33371] OPERADORA TESTE'}).ops,'Ops33371');
 });
 test('OPS em campo estruturado numérico',()=>{
-  const r=C.parseOperator({operator_id:33371,operator_name:'IVONE'});
-  assert.deepEqual(r,{ops:'Ops33371',name:'IVONE'});
+  const r=C.parseOperator({operator_id:33371,operator_name:'OPERADORA TESTE'});
+  assert.deepEqual(r,{ops:'Ops33371',name:'OPERADORA TESTE'});
 });
 test('OPS do Admin não vira operador',()=>assert.equal(C.parseOperator({operator:'Admin(Dynamic Routing)'}),null));
 test('mesmo timestamp com OPSs diferentes rejeita',()=>{
@@ -59,13 +59,13 @@ test('sem horário do recebimento não inventa último',()=>{
 });
 test('Fallback Gestão de Recebimento exige BR e tempo iguais',()=>{
   const at=1794100000*1000;
-  const r=C.confirmReceiveTask({data:{list:[{spx_tracking_number:'BR123456789012A',complete_time:1794100002,operator:'[33371] IVONE'}]}},'BR123456789012A',at);
+  const r=C.confirmReceiveTask({data:{list:[{spx_tracking_number:'BR123456789012A',complete_time:1794100002,operator:'[33371] OPERADORA TESTE'}]}},'BR123456789012A',at);
   assert.equal(r.ops,'Ops33371');
-  const bad=C.confirmReceiveTask({data:{list:[{spx_tracking_number:'BR123456789012A',complete_time:1794200000,operator:'[33371] IVONE'}]}},'BR123456789012A',at);
+  const bad=C.confirmReceiveTask({data:{list:[{spx_tracking_number:'BR123456789012A',complete_time:1794200000,operator:'[33371] OPERADORA TESTE'}]}},'BR123456789012A',at);
   assert.equal(bad.ok,false);
 });
 test('Fallback não aceita outra encomenda e nem primeira linha sem BR',()=>{
-  const r=C.confirmReceiveTask({data:{list:[{spx_tracking_number:'BR444',complete_time:1794100000,operator:'[33371] IVONE'},{operator:'[111] ANA',complete_time:1794100000}]}},'BR123456789012A',1794100000*1000);
+  const r=C.confirmReceiveTask({data:{list:[{spx_tracking_number:'BR444',complete_time:1794100000,operator:'[33371] OPERADORA TESTE'},{operator:'[111] ANA',complete_time:1794100000}]}},'BR123456789012A',1794100000*1000);
   assert.equal(r.ok,false);
 });
 test('lista de BRs mantém unicidade e não aceita SPXBR embutido',()=>{
@@ -167,4 +167,71 @@ test('paginação VT repetida tenta parâmetro alternativo',async()=>{
     return {data:{list:[rows[Number(u.searchParams.get('page_no'))-1]],total:2}};
   });
   assert.equal(result.vts.length,2);
+});
+
+test('0.1.3: lê biz_staff_id e biz_staff_name do mesmo status 1, mesmo com operator genérico',()=>{
+  const r=C.summarizeTracking(payload([
+    t(1,1794000000,'[Ops77777] RECEBIMENTO ANTIGO'),
+    t(1,1794100000,'Admin',{biz_staff_id:131849,biz_staff_name:'OPERADORA EXEMPLO'})
+  ]));
+  assert.equal(r.ok,true);
+  assert.equal(r.ops,'Ops131849');
+  assert.equal(r.name,'OPERADORA EXEMPLO');
+});
+
+test('0.1.3: não aceita biz_staff_id sem nome confirmado',()=>{
+  const r=C.summarizeTracking(payload([t(1,1794100000,'Admin',{biz_staff_id:131849,biz_staff_name:''})]));
+  assert.equal(r.ok,false);
+  assert.equal(r.reason,'ops_nao_identificado');
+  assert.equal(r.diagnostic.latestOperatorFields[0].bizStaffIdFormat,'id_numerico');
+  assert.equal(r.diagnostic.latestOperatorFields[0].hasBizStaffName,false);
+});
+
+test('0.1.3: não aceita biz_staff_id zero nem operador de sistema',()=>{
+  const zero=C.parseOperator({operator:'Admin',biz_staff_id:0,biz_staff_name:'ANA'});
+  const auto=C.parseOperator({operator:'Admin',biz_staff_id:123,biz_staff_name:'System'});
+  assert.equal(zero,null);assert.equal(auto,null);
+});
+
+test('0.1.3: identidade explícita do operator prevalece sobre biz_staff',()=>{
+  const r=C.parseOperator({operator:'[Ops33371] OPERADORA TESTE',biz_staff_id:456,biz_staff_name:'IDENTIDADE SECUNDARIA'});
+  assert.deepEqual(r,{ops:'Ops33371',name:'OPERADORA TESTE'});
+});
+
+test('0.1.3: evento Return 10 não ganha OPS por biz_staff',()=>{
+  const r=C.summarizeTracking(payload([t(10,1794100000,'Admin',{biz_staff_id:123,biz_staff_name:'ANA'})]));
+  assert.equal(r.ok,false);assert.equal(r.reason,'recebimento_nao_identificado');
+});
+
+test('0.1.3: encontra VTs reais de AM e PM de 18/11',()=>{
+  const ts=x=>Math.floor(Date.parse(x)/1000);
+  const rows=[
+    {task_number:'VT20261118ONPRP',create_time:ts('2026-11-18T11:04:18-03:00')},
+    {task_number:'VT20261118ONORP',create_time:ts('2026-11-18T04:52:37-03:00')}
+  ];
+  const vts=A.assignShifts(rows,'2026-11-18');
+  assert.deepEqual(vts.map(v=>v.shift),['AM','PM']);
+  assert.deepEqual(vts.map(v=>v.vt),['VT20261118ONORP','VT20261118ONPRP']);
+});
+
+test('0.1.3: tenta próxima API se a primeira retorna tarefas sem VT da data',async()=>{
+  let paths=[];
+  const r=await A.discoverVts('2026-11-18',async url=>{
+    const u=new URL(url,'https://spx.shopee.com.br');paths.push(u.pathname);
+    if(u.pathname.endsWith('task/list') && !u.pathname.endsWith('validation_task/list'))
+      return {data:{list:[{task_number:'VT20261117AAAA',create_time:Math.floor(Date.parse('2026-11-17T05:00:00-03:00')/1000)}],total:1}};
+    return {data:{list:[{task_number:'VT20261118ONORP',create_time:Math.floor(Date.parse('2026-11-18T04:52:37-03:00')/1000)}],total:1}};
+  });
+  assert.equal(r.vts.length,1);
+  assert.equal(r.vts[0].shift,'AM');
+  assert.ok(paths.some(path=>path.endsWith('validation_task/list')));
+});
+
+test('0.1.3: diagnóstico da VT não inclui detalhes pessoais dos registros',async()=>{
+  const r=await A.discoverVts('2026-11-18',async()=>({data:{list:[{
+    task_number:'VT20261118ONORP',create_time:Math.floor(Date.parse('2026-11-18T04:52:37-03:00')/1000),
+    validation_operator:'nome.sobrenome@shopee.com'
+  }],total:1}}));
+  assert.equal(r.vts.length,1);
+  assert.equal(JSON.stringify(r.diagnostics).includes('nome.sobrenome@'),false);
 });

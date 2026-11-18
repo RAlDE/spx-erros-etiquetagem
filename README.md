@@ -55,7 +55,7 @@ Atualizar no GitHub **não atualiza a extensão instalada**: substitua a pasta, 
 - `extension/audit.js`: procura VTs por data e vincula BRs a exceções por leitura (testável com respostas simuladas).
 - `extension/page.js`: interface flutuante e execução autenticada no SPX.
 - `tests/core.test.cjs`: testes offline, inclusive simulação de 33 BRs, AM/PM, status numérico, Return e erro de consulta.
-- `docs/TESTE_REAL_v0.1.2.md`: roteiro operacional e problemas esperados.
+- `docs/TESTE_REAL_v0.1.3.md`: roteiro de validação real da nova versão.
 
 Execute `node --test tests/core.test.cjs` e `node --check extension/core.js`, `node --check extension/audit.js`, `node --check extension/page.js`, `node --check extension/background.js`.
 
@@ -66,3 +66,10 @@ Execute `node --test tests/core.test.cjs` e `node --check extension/core.js`, `n
 - **0.1.2:** reconhece status numérico 1, amplia parser de OPS, adiciona fallback de gestão de recebimento com correspondência temporal estrita, busca VTs auditadas e filtros Geral/AM/PM, diagnósticos numéricos e testes automáticos.
 
 Não modificar os projetos SPX-DV, SPX-OnHold, SPX-Confirm, SPX-SKU, SPX-Delete-Orders ou a extensão de referência LMH Audit. Não adicionar dados reais de pedidos, logins ou respostas brutas nos commits.
+
+## v0.1.3 — Diagnóstico real de 11 BRs (18/11/2026)
+
+- O rastreamento foi encontrado em 10 de 11 BRs, mas o OPS não foi extraído. `status: 1` foi reconhecido; código não utilizava `biz_staff_id` como alternativa ao `operator`. A partir de 0.1.3, o par `biz_staff_id` numérico e `biz_staff_name` não vazio no **mesmo evento** pode identificar o responsável, sem consultar recebimentos anteriores.
+- Descoberta de VTs ocorre independentemente de já haver OPS, corrigindo o `vtCount: 0` produzido por não execução. O diagnóstico mostra número de VTs e amostra de nomes de campos, sem conteúdo pessoal.
+- Não se altera a regra do último recebimento, nem se força correspondência com tarefas concluídas em outro horário.
+- **Teste real obrigatório**: confirmar ao menos dois IDs e nomes contra o rastreamento visual antes de processar grandes lotes.

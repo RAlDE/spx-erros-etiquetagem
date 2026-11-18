@@ -6,7 +6,7 @@
   if (!core || !audit || location.hostname !== 'spx.shopee.com.br') return;
 
   const ID = 'spx-etq-root';
-  const VERSION='0.1.2';
+  const VERSION='0.1.3';
   const app = {opened:false,running:false,stopped:false,controller:null,data:[],input:[],runId:0,
     selected:'',mode:'GERAL',auditDay:'',vts:[],auditInfo:'',auditIssues:[],auditIncomplete:false};
   let element=null,shadow=null;
@@ -150,7 +150,7 @@
     app.running=true;app.stopped=false;app.controller=new AbortController();app.runId++;
     const token=app.runId;
     app.input=brs;app.data=[];app.selected='';app.mode='GERAL';app.auditDay=auditDay;
-    app.vts=[];app.auditInfo='';app.auditIssues=[];app.auditIncomplete=false;
+    app.vts=[];app.auditInfo='';app.auditIssues=[];app.auditIncomplete=false;app.auditDiagnostics={};
     $('#start').disabled=true;$('#stop').disabled=false;$('#copy').disabled=true;$('#auditDate').disabled=true;
     $('#progress').hidden=false;$('#progress').max=brs.length;$('#progress').value=0;
     $('#results').replaceChildren();$('#summary').replaceChildren();
@@ -182,15 +182,18 @@
     try{
       await Promise.all(Array.from({length:Math.min(3,brs.length)},worker));
       render();
-      if(!app.stopped && app.data.some(x=>x.ok)){
-        status('Rastreamento concluído. Identificando AM/PM pela conferência VT…');
+      // Buscar VTs independentemente de haver OPS reconhecido. Na 0.1.2,
+      // com todos os BRs sem OPS, a consulta VT nem era iniciada (vtCount=0).
+      if(!app.stopped){
+        status('Rastreamento concluído. Procurando conferências VT na data informada…');
         const requester=url=>api(url,token);
         const vts=await audit.discoverVts(auditDay,requester,status,()=>app.stopped,stationId);
         app.vts=vts.vts||[];
         app.auditIncomplete=!!vts.incomplete;
+        app.auditDiagnostics=vts.diagnostics||{};
         if(vts.error) app.auditInfo=`Consulta de VTs: ${vts.error}`;
-        else if(!app.vts.length) app.auditInfo=`Nenhuma VT com horário de abertura confirmado em ${auditDay}. Confirme a data da conferência.`;
-        if(app.vts.length){
+        else if(!app.vts.length) app.auditInfo=`Nenhuma VT com abertura confirmada em ${auditDay}. ${vts.scannedTasks || 0} tarefas examinadas; verifique a data e o diagnóstico.`;
+        if(app.vts.length && app.data.some(x=>x.ok)){
           const scanned=await audit.locateInVts(app.vts,app.data.filter(x=>x.ok).map(x=>x.br),
             requester,status,()=>app.stopped);
           for(const item of app.data){
@@ -202,6 +205,8 @@
           app.auditIncomplete ||= !!scanned.incomplete;
           if(app.auditIssues.length) app.auditInfo+=` ${app.auditIssues.length} consultas de auditoria falharam.`;
           if(app.auditIncomplete) app.auditInfo+=' Varredura incompleta: alguns turnos podem não ter sido localizados.';
+        } else if(app.vts.length) {
+          app.auditInfo=`${app.vts.length} VT(s) localizada(s), porém sem OPS confirmado para relacionar BRs ao ranking.`;
         }
       }
     }catch(error){
@@ -255,7 +260,8 @@
     $('#diagnostic')?.addEventListener('click',async()=>{
       const data=geral.unknown.map(item=>({br:item.br,reason:item.reason,detail:item.detail||'',diagnostic:item.diagnostic||{}}));
       await copyText(JSON.stringify({version:VERSION,day:app.auditDay,results:data,vtCount:app.vts.length,
-        auditIssues:app.auditIssues.map(x=>({stage:x.stage,error:x.error})),auditIncomplete:app.auditIncomplete},null,2));
+        auditIssues:app.auditIssues.map(x=>({stage:x.stage,error:x.error})),
+        auditDiagnostics:app.auditDiagnostics,auditIncomplete:app.auditIncomplete},null,2));
       status('Diagnóstico resumido copiado. Confira o conteúdo antes de compartilhar.');
     });
   }

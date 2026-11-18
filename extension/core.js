@@ -105,7 +105,29 @@
     }
     const id = [event?.operator_id, event?.ops_id, event?.user_id, event?.staff_id]
       .map(normalizeOpsId).find(Boolean);
-    return id ? {ops: id, name: names[0] || 'Nome não informado'} : null;
+    if (id) return {ops:id, name:names[0] || 'Nome não informado'};
+
+    // No tracking_info real, o status 1 também pode trazer a identidade do
+    // funcionário somente em biz_staff_id + biz_staff_name. Ambos pertencem
+    // AO MESMO evento do último recebimento; não consultar eventos antigos.
+    // Exigir o par ID numérico + nome/login evita promover valores de sistema.
+    const staffId = normalizeOpsId(event?.biz_staff_id ?? event?.bizStaffId);
+    const staffName = text(event?.biz_staff_name ?? event?.bizStaffName);
+    const notHuman = /^(?:admin(?:istrator)?|system|sistema|autom[aá]tico|automatic|unknown|null|undefined|n\/?a)$/i;
+    if (staffId && staffId !== 'Ops0' && staffName && !notHuman.test(staffName)) {
+      return {ops:staffId, name:staffName};
+    }
+    return null;
+  }
+
+  function operatorFormat(value) {
+    if (value === undefined || value === null || value === '') return 'vazio';
+    if (typeof value === 'object') return Array.isArray(value) ? 'lista' : 'objeto';
+    const v = text(value);
+    if (/^\[\s*(?:ops)?\d+\s*\]/i.test(v)) return 'id_em_colchetes';
+    if (/^(?:ops)?\d+$/i.test(v)) return 'id_numerico';
+    if (v.includes('@')) return 'login';
+    return 'outro_texto';
   }
 
   function sanitizedEventDiagnostic(events) {
@@ -150,7 +172,16 @@
     if (ids.length > 1) return {ok:false,reason:'operadores_conflitantes_mesmo_horario',diagnostic:{receivedCount:received.length}};
     const operator = operators.find(o => o.name !== 'Nome não informado') || operators[0];
     if (!operator) return {ok:false,reason:'ops_nao_identificado',receivedAt:latestAt,
-      diagnostic:{...diagnostic,receivedCount:received.length}};
+      diagnostic:{...diagnostic,receivedCount:received.length,
+        // Só formatos/presença: nunca exportar ID, nome, login nem mensagem do evento.
+        latestOperatorFields:latestGroup.slice(0,3).map(e=>({
+          operatorFormat:operatorFormat(e.item?.operator),
+          bizStaffIdFormat:operatorFormat(e.item?.biz_staff_id ?? e.item?.bizStaffId),
+          hasBizStaffName:!!text(e.item?.biz_staff_name ?? e.item?.bizStaffName),
+          hasStaffName:!!text(e.item?.staff_name),
+          hasOperatorId:!!text(e.item?.operator_id),
+          keys:Object.keys(e.item).filter(k=>/operator|staff|user|login/i.test(k)).slice(0,12)
+        }))}};
 
     // A AT do mesmo ciclo é opcional, apenas posterior a este recebimento.
     const assignment = events.filter(e => isAssignment(e.item) && e.at >= latestAt &&

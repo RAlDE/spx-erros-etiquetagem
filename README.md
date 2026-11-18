@@ -1,55 +1,68 @@
-# SPX — Erros de Etiquetagem (ETQ)
+# SPX ETQ — Erros de Etiquetagem
 
-Extensão independente Chrome/Edge (Manifest V3) para classificar **operadores por quantidade de BRs com erro de etiquetagem**. **Versão 0.1.1 para teste**, com ícone ETQ apenas em letras; sem validação em sessão SPX real.
+Extensão independente Chrome/Edge (Manifest V3). **Versão 0.1.2 para teste real**, sem confirmação de funcionamento com os 33 BRs da operação. O ícone do navegador exibe somente as letras **ETQ**.
 
-## Regra do ranking
+## Finalidade
 
-1. O operador cola uma lista de BRs no painel **ETQ**, dentro do SPX. O painel reconhece BRs misturados com textos, normaliza e retira repetidos.
-2. Para **cada BR único**, consulta o histórico `tracking_info` com a sessão atual.
-3. Seleciona o evento **`LMHub_Recebido` mais recente pela data/hora**, não a última etapa de atribuição ou entrega. Extrai **OPS** e nome **desse mesmo evento**. Quando o último evento não revela o OPS, não atribui o erro ao operador de um recebimento anterior.
-4. Cada BR confirmado vale **1 erro** no ranking do OPS correspondente. Ordena maior para menor contagem. A lista individual de BRs pode ser aberta clicando no operador.
-5. Opcionalmente busca a AT no evento `LMHub_Atribuindo` imediatamente posterior ao último recebimento e tenta ler a posição de **Corredor-Gaiola/Rota** (ex.: `B-34`). É apenas informação auxiliar do BR, **sem ranking de ruas** e sem afetar contagem. Ausência de vínculo seguro significa rua em branco.
-6. BRs sem evento/horário/OPS confiáveis aparecem separados. O total do ranking não inclui BRs sem atribuição segura.
+O operador cola uma lista de BRs previamente apontados como erro de etiquetagem. A extensão pesquisa a sessão autenticada do SPX e apresenta um **ranking apenas dos operadores responsáveis pelo último recebimento normal**, ordenado por quantidade de BRs distintos. Pode filtrar o ranking por expedição **Geral, AM, PM** (e PM2, caso haja terceira VT).
 
-**Não se pode interpretar o último evento do histórico como o último recebimento.** O BR pode ter múltiplas rotas e múltiplos recebimentos em dias diferentes. Não deduplicar eventos do histórico, mas contar cada BR colado uma vez.
+Não determina sozinho se um BR é erro de etiqueta: **a lista colada é a definição da amostra**.
 
-## Instalação
+## Passo a passo
 
-1. No GitHub, escolha **Code → Download ZIP**, extraia e localize a pasta `extension` (contém `manifest.json`).
-2. Chrome: `chrome://extensions` (Edge: `edge://extensions`) → **Modo do desenvolvedor** → **Carregar sem compactação** → selecione `extension`.
-3. Abra `https://spx.shopee.com.br/` com uma sessão e permissões válidas.
-4. Clique no ícone ETQ para abrir/ocultar o painel; cole os BRs, clique **Pesquisar e gerar ranking**. **Parar** aborta as consultas ainda em curso e preserva resultados já recebidos.
-5. Clique em um OPS para abrir os BRs; **Copiar ranking** exporta colunas tabuladas, compatíveis com planilhas.
+1. Baixe o ZIP da versão de teste fornecido no ChatGPT ou clique em **Code → Download ZIP** neste repositório e extraia.
+2. Abra `chrome://extensions` (ou `edge://extensions`), habilite **Modo do desenvolvedor**, clique em **Carregar sem compactação** e selecione a pasta `extension` contendo `manifest.json`.
+3. Abra `https://spx.shopee.com.br/`, faça login, clique no ícone **ETQ** e cole os BRs.
+4. **Selecione a data da conferência VT**, não necessariamente a data do recebimento dos BRs. O campo sugere o dia atual de São Paulo e pode ser alterado.
+5. Clique **Pesquisar e gerar ranking**. Aguarde a consulta de rastreamento e a procura das VTs de conferência. O levantamento das VTs pode envolver diversas rotas e demorar mais que o rastreamento.
+6. Veja **Geral**, **AM**, **PM** (e **PM2** se aplicável). Clique no OPS para ver seus BRs; **Copiar ranking** exporta a tabela do filtro atual para Excel/Google Sheets.
+7. Se houver BRs não atribuídos, use **Copiar diagnóstico resumido**. Verifique o conteúdo antes de enviar qualquer diagnóstico a terceiros.
 
-Ao atualizar os arquivos localmente, clique em **Recarregar** na extensão e atualize a aba SPX. Publicar no GitHub **não atualiza automaticamente** a extensão instalada.
+Atualizar no GitHub **não atualiza a extensão instalada**: substitua a pasta, recarregue em `chrome://extensions` e atualize a aba do SPX.
 
-## Fontes e restrições
+## Identificação do operador (último recebimento)
 
-- Consulta somente leitura `GET /api/fleet_order/order/detail/tracking_info?shipment_id=<BR>`.
-- Consulta opcional somente leitura lógica (POST de busca, **sem alteração de estado**) em `/spx_delivery/admin/assignment/assignment_task/search/v2` com a AT do mesmo ciclo, baseada na consulta já usada por `spx-dv`.
-- Não captura recebimentos, não imprime etiquetas, não cria exceções, não confirma tratativas e não altera planilhas ou outros repositórios.
-- Código executa na aba autenticada do SPX; nada é enviado a servidores da extensão, GitHub ou planilhas. Não guarda a lista em armazenamento persistente.
-- As chaves/formatos reais da API podem variar; se a resposta não trouxer o nome textual `LMHub_Recebido` ou o OPS, a extensão **não adivinha códigos de status**. A opção de copiar diagnóstico resumido ajuda a identificar as chaves/status sem exportar respostas brutas.
-- Limite de três consultas simultâneas para a lista; erros de autenticação e limitação HTTP interrompem novas consultas.
+- `GET /api/fleet_order/order/detail/tracking_info?shipment_id=BR...` na sessão atual do SPX.
+- O status **numérico `1`** corresponde ao recebimento normal `LMHub_Received`; textos `LMHub_Recebido` e a mensagem explícita de chegada também são reconhecidos. O status `10` corresponde a Return e é excluído.
+- Seleciona o **recebimento normal mais recente pelo timestamp**, inclusive quando há múltiplas passagens do mesmo BR. Extrai o OPS **do mesmo evento**, não do motorista, da AT nem de `Admin(Dynamic Routing)`.
+- Suporta `[Ops123] NOME`, `[123] NOME` e identificadores estruturados de operador; se o último evento não tiver OPS, não herda de recebimento antigo.
+- Se o OPS estiver ausente, a consulta de `GET /api/in-station/uni_receive/receive_management/receive_task/list` é **complementar**, aceitando um resultado somente com **mesmo BR** e **horário até 10 minutos do último recebimento conhecido** e OPS sem conflito. Caso contrário, mantém o BR como não atribuído.
+- Usa o ID da estação da sessão quando disponível para filtrar o rastreamento de outros hubs.
+- Um BR distinto conta **um erro**, mesmo se o código foi colado mais de uma vez ou se apareceu em várias rotas.
+
+## Turnos AM/PM — vínculo por VT
+
+- Com a data da conferência selecionada, consulta `GET /api/in-station/lmhub/audit/task/list` para identificar as VTs. **Primeira VT aberta no dia = AM; segunda = PM; terceira = PM2**. Não divide por 12h e não deduz o dia exclusivamente do ID da tarefa.
+- Para cada VT, consulta `GET /api/in-station/lmhub/audit/target/list?task_id=VT...` e, **somente em rotas com quantidade de Missing/Missorted > 0**, consulta as exceções por `GET /api/in-station/lmhub/audit/parcel/list` com parâmetros descritos na LMH Audit 2.9.0.
+- O **turno é o da primeira VT onde a ocorrência do BR foi confirmada**, e não o turno do recebimento. Um BR visto no AM e novamente no PM pertence somente ao AM.
+- Se o BR não estiver nas exceções da VT selecionada, a consulta for incompleta ou as VTs não estiverem disponíveis, mantém seu OPS no **ranking Geral**, mas indica o **turno não identificado**. Não soma o BR ao AM/PM por aproximação.
+- O filtro por turno opera **apenas no dia selecionado**. Se a lista contiver erros de dias diferentes, faça pesquisas separadas por data. O usuário escolhe a data da conferência, não a data do último recebimento.
+- VTs não são, por si só, prova de erro de etiqueta: esse diagnóstico compara a amostra colada às exceções presentes nas tarefas.
+
+## Limites e segurança
+
+- Consultas apenas de leitura de estado; alguns endpoints de busca do SPX utilizam **POST de consulta** sem efeitos de alteração. Nenhum recebimento, confirmação, impressão, exceção ou tarefa é criado.
+- Sem envio de BRs a backend externo, GitHub, planilhas ou Apps Script; não usa tokens/cookies diretamente, utiliza a sessão SPX do navegador.
+- Não persiste a lista. **Parar** cancela consultas pendentes e mantém o que já foi obtido.
+- Até três consultas paralelas por BR e três para rotas de auditoria; há limites de páginas e requisições para não sobrecarregar o SPX. Uma varredura incompleta é sinalizada.
+- O comportamento da API do SPX deve ser confirmado em uso real; nenhum teste local valida autenticação, conteúdo real de VT ou formato específico do ambiente.
 
 ## Estrutura
 
-- `extension/manifest.json` — configuração MV3.
-- `extension/background.js` — abre ou oculta o painel pelo ícone.
-- `extension/core.js` — parser, extração e agrupamento testáveis sem acesso ao SPX.
-- `extension/page.js` — interface e consultas usando a sessão do SPX, sem persistência.
-- `tests/core.test.cjs` — testes sintéticos offline.
+- `extension/manifest.json`: Manifest V3; ícone somente ETQ.
+- `extension/background.js`: abre/fecha o painel pelo ícone.
+- `extension/core.js`: identifica último recebimento e OPS, consolida ranking (puro, testável).
+- `extension/audit.js`: procura VTs por data e vincula BRs a exceções por leitura (testável com respostas simuladas).
+- `extension/page.js`: interface flutuante e execução autenticada no SPX.
+- `tests/core.test.cjs`: testes offline, inclusive simulação de 33 BRs, AM/PM, status numérico, Return e erro de consulta.
+- `docs/TESTE_REAL_v0.1.2.md`: roteiro operacional e problemas esperados.
 
-## Testes e limite atual
+Execute `node --test tests/core.test.cjs` e `node --check extension/core.js`, `node --check extension/audit.js`, `node --check extension/page.js`, `node --check extension/background.js`.
 
-`node --test tests/core.test.cjs` e `node --check extension/*.js` (verifique os arquivos individualmente). A versão inicial precisa ser conferida em uma sessão SPX real, sobretudo o formato de `tracking_info`/`LMHub_Recebido` e o campo de corredor na resposta de AT. **Teste sintético não prova funcionamento em produção.**
+## Histórico e controle
 
-## Regra de manutenção
+- **0.1.0:** primeiro ranking; diagnósticos mostraram 33 BRs pesquisados, zero OPS reconhecidos.
+- **0.1.1:** novo ícone somente letras ETQ, mantendo lógica 0.1.0.
+- **0.1.2:** reconhece status numérico 1, amplia parser de OPS, adiciona fallback de gestão de recebimento com correspondência temporal estrita, busca VTs auditadas e filtros Geral/AM/PM, diagnósticos numéricos e testes automáticos.
 
-Projeto separado de `spx-dv`, `spx-onhold`, `spx-delete-orders`, `spx-confirm` e `spx-sku`. Não modificar esses projetos. Corrigir apenas o comportamento solicitado, preservar versões validadas, obter os SHAs atuais antes de qualquer edição e documentar alterações. Nunca inserir BRs reais, nomes pessoais, sessões, respostas brutas ou vídeos no GitHub.
-## Atualização 0.1.1 — ícone
-
-- Ícone laranja com as letras **ETQ**, sem outros elementos gráficos.
-- `manifest.json` atualizado para carregar o ícone também na barra de ferramentas do navegador.
-- Nenhuma alteração da lógica de consulta ou classificação por OPS nesta versão.
-- Pendência real: investigação de execução com 33 BRs consultados e 0 OPS atribuídos. Precisa do diagnóstico do rastreamento para identificar o formato efetivo da resposta SPX, sem inferir responsáveis.
+Não modificar os projetos SPX-DV, SPX-OnHold, SPX-Confirm, SPX-SKU, SPX-Delete-Orders ou a extensão de referência LMH Audit. Não adicionar dados reais de pedidos, logins ou respostas brutas nos commits.

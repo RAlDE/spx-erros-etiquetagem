@@ -10,7 +10,7 @@ chrome.action.onClicked.addListener(async tab => {
     return;
   }
   try {
-    await chrome.scripting.executeScript({target: {tabId: tab.id}, files: ['core.js', 'page.js'], world: 'MAIN'});
+    await chrome.scripting.executeScript({target: {tabId: tab.id}, files: ['core.js', 'audit.js', 'page.js'], world: 'MAIN'});
     const response = await chrome.scripting.executeScript({
       target: {tabId: tab.id}, world: 'MAIN',
       func: () => window.__spxErrosEtiquetagemApp?.toggle() || {opened: false}

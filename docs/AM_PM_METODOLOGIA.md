@@ -27,4 +27,11 @@ Não assumir que uma consulta isolada `parcel/list?shipment_id=BR` funciona sem 
 - Um BR não deve ser somado duas vezes na visão Geral, nem ter classificação cruzada entre AM e PM.
 
 ## Situação
-**Especificação registrada, sem implementação nem validação real.** A correção do problema anterior (33 BRs consultados, nenhum OPS identificado) continua pendente. Aplicar e testar em versão futura da ETQ exclusivamente, sem alterar SPX-DV, SPX-OnHold, SPX-Confirm, SPX-SKU nem LMH Audit.
+**Implementação inicial 0.1.2 preparada para testes reais; ainda sem validação autenticada no SPX.** A correção do problema anterior (33 BRs consultados, nenhum OPS identificado) continua pendente. Aplicar e testar em versão futura da ETQ exclusivamente, sem alterar SPX-DV, SPX-OnHold, SPX-Confirm, SPX-SKU nem LMH Audit.
+
+## Implementação ETQ v0.1.2 (18/11/2026)
+
+- Reconhece recebimento normal pelo `status: 1`, exclui Return `status: 10` e utiliza apenas OPS do último evento normal do BR.
+- Data VT escolhida no painel ETQ; consultas de leitura `audit/task/list`, `audit/target/list`, `audit/parcel/list` associam o BR à primeira VT em que consta a ocorrência.
+- Ranking Geral / AM / PM (e PM2); BR sem VT comprovada permanece no Geral, com turno não identificado.
+- 33 testes offline aprovados (`node --test tests/core.test.cjs`). **A validação real no SPX ainda é necessária.**

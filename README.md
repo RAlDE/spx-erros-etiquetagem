@@ -1,6 +1,6 @@
 # SPX ETQ — Erros de Etiquetagem
 
-Extensão independente Chrome/Edge (Manifest V3). **Versão 0.1.2 para teste real**, sem confirmação de funcionamento com os 33 BRs da operação. O ícone do navegador exibe somente as letras **ETQ**.
+Extensão independente Chrome/Edge (Manifest V3). **Versão 0.1.3 para teste real**, sem confirmação de funcionamento com os 33 BRs da operação. O ícone do navegador exibe somente as letras **ETQ**.
 
 ## Finalidade
 
@@ -10,15 +10,15 @@ Não determina sozinho se um BR é erro de etiqueta: **a lista colada é a defin
 
 ## Passo a passo
 
-1. Baixe o ZIP da versão de teste fornecido no ChatGPT ou clique em **Code → Download ZIP** neste repositório e extraia.
-2. Abra `chrome://extensions` (ou `edge://extensions`), habilite **Modo do desenvolvedor**, clique em **Carregar sem compactação** e selecione a pasta `extension` contendo `manifest.json`.
+1. Para a primeira instalação via GitHub, use **GitHub Desktop** para clonar este repositório privado e abra a pasta `extension` dentro do clone. Consulte [Atualização pelo GitHub](docs/ATUALIZACAO_PELO_GITHUB.md).
+2. Abra `chrome://extensions` (ou `edge://extensions`), habilite **Modo do desenvolvedor**, clique em **Carregar sem compactação** e selecione a pasta `extension` do clone, contendo `manifest.json`. Isso é configurado uma única vez.
 3. Abra `https://spx.shopee.com.br/`, faça login, clique no ícone **ETQ** e cole os BRs.
 4. **Selecione a data da conferência VT**, não necessariamente a data do recebimento dos BRs. O campo sugere o dia atual de São Paulo e pode ser alterado.
 5. Clique **Pesquisar e gerar ranking**. Aguarde a consulta de rastreamento e a procura das VTs de conferência. O levantamento das VTs pode envolver diversas rotas e demorar mais que o rastreamento.
 6. Veja **Geral**, **AM**, **PM** (e **PM2** se aplicável). Clique no OPS para ver seus BRs; **Copiar ranking** exporta a tabela do filtro atual para Excel/Google Sheets.
 7. Se houver BRs não atribuídos, use **Copiar diagnóstico resumido**. Verifique o conteúdo antes de enviar qualquer diagnóstico a terceiros.
 
-Atualizar no GitHub **não atualiza a extensão instalada**: substitua a pasta, recarregue em `chrome://extensions` e atualize a aba do SPX.
+Após publicar nova versão no GitHub, no **GitHub Desktop** clique em **Fetch origin → Pull origin**, depois em **Recarregar** no cartão da ETQ em `chrome://extensions` e atualize a aba do SPX. **Não precisa baixar nem extrair ZIP novamente.** A sincronização não é automática. Veja [guia completo](docs/ATUALIZACAO_PELO_GITHUB.md).
 
 ## Identificação do operador (último recebimento)
 

@@ -2,23 +2,30 @@
 
 Extensão independente Chrome/Edge (Manifest V3). **Versão 0.1.3 para teste real**, sem confirmação de funcionamento com os 33 BRs da operação. O ícone do navegador exibe somente as letras **ETQ**.
 
+## Instalação com atualização pelo GitHub (recomendada)
+
+A partir de 19/11/2026, o repositório é **público** e disponibiliza o **Carregador ETQ 0.2.0** no diretório `loader/`, no mesmo modelo do SPX OnHold. O carregador mantém os scripts de ranking em `extension/core.js`, `extension/audit.js` e `extension/page.js`, atualizados por botão na própria extensão.
+
+**Instalação inicial, uma única vez por computador:** baixe o repositório em ZIP, extraia, carregue **a pasta `loader` (manifest 0.2.0)** em `chrome://extensions`, ative **Permitir scripts do usuário**, clique em **Atualizar pelo GitHub** e recarregue o SPX. **Desative a ETQ 0.1.x antiga**, se estiver instalada, para não misturar carregadores.
+
+**Atualizações futuras:** clique no ícone ETQ → **Atualizar pelo GitHub** → recarregue a aba SPX → **Abrir ETQ**. Não é necessário baixar ZIP, extrair ou usar GitHub Desktop novamente.
+
+[Guia de instalação do carregador](docs/INSTALACAO_LOADER.md). A versão **0.1.3 do módulo de ranking continua em teste real**: o carregador não resolve automaticamente erros de extração de OPS ou vinculação AM/PM.
+
 ## Finalidade
 
 O operador cola uma lista de BRs previamente apontados como erro de etiquetagem. A extensão pesquisa a sessão autenticada do SPX e apresenta um **ranking apenas dos operadores responsáveis pelo último recebimento normal**, ordenado por quantidade de BRs distintos. Pode filtrar o ranking por expedição **Geral, AM, PM** (e PM2, caso haja terceira VT).
 
 Não determina sozinho se um BR é erro de etiqueta: **a lista colada é a definição da amostra**.
 
-## Passo a passo
+## Como usar a ETQ após instalar o carregador
 
-1. Para a primeira instalação via GitHub, use **GitHub Desktop** para clonar este repositório privado e abra a pasta `extension` dentro do clone. Consulte [Atualização pelo GitHub](docs/ATUALIZACAO_PELO_GITHUB.md).
-2. Abra `chrome://extensions` (ou `edge://extensions`), habilite **Modo do desenvolvedor**, clique em **Carregar sem compactação** e selecione a pasta `extension` do clone, contendo `manifest.json`. Isso é configurado uma única vez.
-3. Abra `https://spx.shopee.com.br/`, faça login, clique no ícone **ETQ** e cole os BRs.
-4. **Selecione a data da conferência VT**, não necessariamente a data do recebimento dos BRs. O campo sugere o dia atual de São Paulo e pode ser alterado.
-5. Clique **Pesquisar e gerar ranking**. Aguarde a consulta de rastreamento e a procura das VTs de conferência. O levantamento das VTs pode envolver diversas rotas e demorar mais que o rastreamento.
-6. Veja **Geral**, **AM**, **PM** (e **PM2** se aplicável). Clique no OPS para ver seus BRs; **Copiar ranking** exporta a tabela do filtro atual para Excel/Google Sheets.
-7. Se houver BRs não atribuídos, use **Copiar diagnóstico resumido**. Verifique o conteúdo antes de enviar qualquer diagnóstico a terceiros.
-
-Após publicar nova versão no GitHub, no **GitHub Desktop** clique em **Fetch origin → Pull origin**, depois em **Recarregar** no cartão da ETQ em `chrome://extensions` e atualize a aba do SPX. **Não precisa baixar nem extrair ZIP novamente.** A sincronização não é automática. Veja [guia completo](docs/ATUALIZACAO_PELO_GITHUB.md).
+1. Faça login em `https://spx.shopee.com.br/`.
+2. Clique no ícone ETQ e em **Abrir / fechar painel ETQ**.
+3. Cole os BRs e selecione a **data da conferência VT** (não obrigatoriamente a data do recebimento).
+4. Clique em **Pesquisar e gerar ranking** e confira **Geral / AM / PM** (ou PM2, quando houver terceira VT).
+5. Se ocorrer erro de identificação, copie o diagnóstico resumido, sem publicar BRs reais no GitHub.
+6. Para receber uma correção nova, abra o ícone ETQ, clique em **Atualizar pelo GitHub** e recarregue a aba SPX.
 
 ## Identificação do operador (último recebimento)
 
@@ -49,15 +56,18 @@ Após publicar nova versão no GitHub, no **GitHub Desktop** clique em **Fetch o
 
 ## Estrutura
 
-- `extension/manifest.json`: Manifest V3; ícone somente ETQ.
+- `loader/`: carregador instalado uma única vez; popup **Atualizar pelo GitHub**, ativar/desativar e abrir ETQ.
+- `catalog.json`: versão do módulo e arquivos públicos autorizados ao carregador.
+- `extension/manifest.json`: instalação antiga, mantida como referência e alternativa manual de desenvolvimento.
 - `extension/background.js`: abre/fecha o painel pelo ícone.
 - `extension/core.js`: identifica último recebimento e OPS, consolida ranking (puro, testável).
 - `extension/audit.js`: procura VTs por data e vincula BRs a exceções por leitura (testável com respostas simuladas).
 - `extension/page.js`: interface flutuante e execução autenticada no SPX.
 - `tests/core.test.cjs`: testes offline, inclusive simulação de 33 BRs, AM/PM, status numérico, Return e erro de consulta.
+- `tests/loader.test.cjs`: testes do carregador público e atualização via GitHub.
 - `docs/TESTE_REAL_v0.1.3.md`: roteiro de validação real da nova versão.
 
-Execute `node --test tests/core.test.cjs` e `node --check extension/core.js`, `node --check extension/audit.js`, `node --check extension/page.js`, `node --check extension/background.js`.
+Execute `node --test tests/*.test.cjs` e `node --check extension/core.js`, `node --check extension/audit.js`, `node --check extension/page.js`, `node --check extension/background.js`.
 
 ## Histórico e controle
 

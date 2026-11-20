@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>SPX ETQ</title>
+  <style>
+    *{box-sizing:border-box}
+    body{font:13px/1.45 Arial,sans-serif;color:#f8fafc;background:#10151d;margin:0;width:340px}
+    header{padding:15px;background:#c2410c;display:flex;align-items:center;justify-content:space-between}
+    h1{font-size:16px;margin:0} .version{font-size:11px;opacity:.9}
+    main{padding:14px}p{margin:6px 0 12px;color:#cbd5e1}
+    button{width:100%;padding:10px 8px;border:1px solid #f97316;border-radius:7px;color:#fff;background:#ea580c;cursor:pointer;font-size:13px;font-weight:700;margin-bottom:9px}
+    button.secondary{background:#243142;border-color:#64748b}button:disabled{opacity:.5;cursor:wait}
+    .status{font-size:12px;color:#fcd34d;min-height:18px;overflow-wrap:anywhere}
+    .muted{font-size:11px;color:#94a3b8}a{color:#fdba74}
+    .row{display:flex;gap:8px}.row button{flex:1}strong{color:#fff}
+  </style>
+</head>
+<body>
+  <header><h1>ETQ · Erros de Etiquetagem</h1><span class="version">Loader v0.2.0</span></header>
+  <main>
+    <p>Módulo GitHub: <strong id="version">Verificando…</strong></p>
+    <button id="open">Abrir / fechar painel ETQ</button>
+    <button id="sync" class="secondary">Atualizar pelo GitHub</button>
+    <button id="toggle" class="secondary">Ativar / Desativar</button>
+    <div id="status" class="status" role="status" aria-live="polite">Verificando…</div>
+    <p class="muted">Primeiro uso: habilite <strong>Permitir scripts do usuário</strong> em Detalhes da extensão. Depois clique em Atualizar.</p>
+    <p class="muted">Após atualizar, recarregue a aba do SPX para substituir uma versão já aberta. O GitHub não recebe sua lista de BRs.</p>
+    <script src="popup.js"></script>
+  </main>
+</body>
+</html>

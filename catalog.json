@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "name": "SPX ETQ",
+  "updatedAt": "2026-11-19",
+  "owner": "RAlDE",
+  "modules": [
+    {
+      "id": "etq-ranking",
+      "name": "Ranking de erros de etiquetagem",
+      "version": "0.1.3",
+      "enabled": true,
+      "matches": ["https://spx.shopee.com.br/*"],
+      "scripts": [
+        "https://raw.githubusercontent.com/RAlDE/spx-erros-etiquetagem/main/extension/core.js",
+        "https://raw.githubusercontent.com/RAlDE/spx-erros-etiquetagem/main/extension/audit.js",
+        "https://raw.githubusercontent.com/RAlDE/spx-erros-etiquetagem/main/extension/page.js"
+      ]
+    }
+  ]
+}
